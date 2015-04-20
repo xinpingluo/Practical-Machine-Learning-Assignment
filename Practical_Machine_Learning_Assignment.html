@@ -112,9 +112,9 @@ training_dataset_0 &lt;- training_nzv[,a]
 testing_dataset_0 &lt;- testing_nzv[,a]
 
 sum(is.na(training_dataset_0))</code></pre>
-<pre><code>## [1] 662400</code></pre>
+<pre><code>## [1] 605052</code></pre>
 <pre class="r"><code>sum(is.na(testing_dataset_0))</code></pre>
-<pre><code>## [1] 221536</code></pre>
+<pre><code>## [1] 202020</code></pre>
 <p>The dataset contains a high number of NAs. The descriptive analysis yields that certain columns contain high numbers of missing data. Thus we remove all those columns with more than 90% of NAs</p>
 <pre class="r"><code>training_dataset &lt;- training_dataset_0[, colSums(is.na(training_dataset_0)) &lt; nrow(training_dataset_0) * 0.9]
 # same transformation for testing dataset
@@ -164,89 +164,89 @@ library(randomForest)</code></pre>
 </div>
 <div id="predictions-and-performance-evaluation" class="section level1">
 <h1>Predictions and Performance Evaluation</h1>
-<p>We make predictions on the validation datasets based on the generated models (both LDA and Random Forest).</p>
+<p>We make predictions on the validation datasets based on the generated models (both LDA and Random Forest) in order to assess the out of sample error.</p>
 <pre class="r"><code>predict_lda &lt;- predict(model_lda_1, testing_dataset_processed)$class
 predict_rf &lt;- predict(model_randomForest_1, testing_dataset_processed)
 
-#70% Accuracy in linear discriminant analysis
+#70.4% Accuracy in linear discriminant analysis
 confusionMatrix(table(predict_lda, testing_dataset_processed$classe))</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##            
 ## predict_lda    A    B    C    D    E
-##           A 1152  123   78   56   39
-##           B   43  626   93   37  120
-##           C  101  123  559   93   83
-##           D   96   43  109  596   91
-##           E    3   34   16   22  568
+##           A 1139  136   82   48   41
+##           B   40  615   90   50  130
+##           C  120  124  559  106   80
+##           D   92   34  100  582   95
+##           E    4   40   24   18  555
 ## 
 ## Overall Statistics
-##                                          
-##                Accuracy : 0.7139         
-##                  95% CI : (0.701, 0.7265)
-##     No Information Rate : 0.2845         
-##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
-##                                          
-##                   Kappa : 0.638          
-##  Mcnemar's Test P-Value : &lt; 2.2e-16      
+##                                           
+##                Accuracy : 0.7035          
+##                  95% CI : (0.6905, 0.7163)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.6248          
+##  Mcnemar's Test P-Value : &lt; 2.2e-16       
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.8258   0.6596   0.6538   0.7413   0.6304
-## Specificity            0.9156   0.9259   0.9012   0.9173   0.9813
-## Pos Pred Value         0.7956   0.6812   0.5829   0.6374   0.8834
-## Neg Pred Value         0.9297   0.9189   0.9250   0.9476   0.9218
+## Sensitivity            0.8165   0.6481   0.6538   0.7239   0.6160
+## Specificity            0.9125   0.9216   0.8938   0.9217   0.9785
+## Pos Pred Value         0.7877   0.6649   0.5652   0.6445   0.8658
+## Neg Pred Value         0.9260   0.9161   0.9244   0.9445   0.9188
 ## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
-## Detection Rate         0.2349   0.1277   0.1140   0.1215   0.1158
-## Detection Prevalence   0.2953   0.1874   0.1956   0.1907   0.1311
-## Balanced Accuracy      0.8707   0.7928   0.7775   0.8293   0.8058</code></pre>
+## Detection Rate         0.2323   0.1254   0.1140   0.1187   0.1132
+## Detection Prevalence   0.2949   0.1886   0.2017   0.1841   0.1307
+## Balanced Accuracy      0.8645   0.7848   0.7738   0.8228   0.7972</code></pre>
 <pre class="r"><code>OOSError_lda &lt;- sum(predict_lda != testing_dataset_processed$classe) / length(testing_dataset_processed$classe)
 print(OOSError_lda)</code></pre>
-<pre><code>## [1] 0.286093</code></pre>
+<pre><code>## [1] 0.2964927</code></pre>
 <pre class="r"><code>#99,8% Accuracy in random forest model
 confusionMatrix(table(predict_rf, testing_dataset_processed$classe))</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           
 ## predict_rf    A    B    C    D    E
-##          A 1395    1    0    0    0
-##          B    0  948    1    0    0
-##          C    0    0  854    4    0
-##          D    0    0    0  800    3
-##          E    0    0    0    0  898
+##          A 1395    2    0    0    0
+##          B    0  946    2    0    0
+##          C    0    1  853    5    0
+##          D    0    0    0  799    1
+##          E    0    0    0    0  900
 ## 
 ## Overall Statistics
-##                                           
-##                Accuracy : 0.9982          
-##                  95% CI : (0.9965, 0.9992)
-##     No Information Rate : 0.2845          
-##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
-##                                           
-##                   Kappa : 0.9977          
-##  Mcnemar's Test P-Value : NA              
+##                                          
+##                Accuracy : 0.9978         
+##                  95% CI : (0.996, 0.9989)
+##     No Information Rate : 0.2845         
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
+##                                          
+##                   Kappa : 0.9972         
+##  Mcnemar's Test P-Value : NA             
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            1.0000   0.9989   0.9988   0.9950   0.9967
-## Specificity            0.9997   0.9997   0.9990   0.9993   1.0000
-## Pos Pred Value         0.9993   0.9989   0.9953   0.9963   1.0000
-## Neg Pred Value         1.0000   0.9997   0.9998   0.9990   0.9993
+## Sensitivity            1.0000   0.9968   0.9977   0.9938   0.9989
+## Specificity            0.9994   0.9995   0.9985   0.9998   1.0000
+## Pos Pred Value         0.9986   0.9979   0.9930   0.9988   1.0000
+## Neg Pred Value         1.0000   0.9992   0.9995   0.9988   0.9998
 ## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
-## Detection Rate         0.2845   0.1933   0.1741   0.1631   0.1831
-## Detection Prevalence   0.2847   0.1935   0.1750   0.1637   0.1831
-## Balanced Accuracy      0.9999   0.9993   0.9989   0.9971   0.9983</code></pre>
+## Detection Rate         0.2845   0.1929   0.1739   0.1629   0.1835
+## Detection Prevalence   0.2849   0.1933   0.1752   0.1631   0.1835
+## Balanced Accuracy      0.9997   0.9982   0.9981   0.9968   0.9994</code></pre>
 <pre class="r"><code>OOSError_rf &lt;- sum(predict_rf != testing_dataset_processed$classe) / length(testing_dataset_processed$classe)
 print(OOSError_rf)</code></pre>
-<pre><code>## [1] 0.001835237</code></pre>
-<p>The expected out of Sample Error for the LDA model is 28.6 %. The expected out of Sample Error for the Random Forest Model is 0.2%. We choose the Random Forest Model due to its better out of Sample Performance.</p>
+<pre><code>## [1] 0.002243067</code></pre>
+<p>The expected out of Sample Error for the LDA model is 29.6 %. The expected out of Sample Error for the Random Forest Model is 0.2%. We choose the Random Forest Model due to its better out of Sample Performance.</p>
 <pre class="r"><code>##Importance of variables in the model
 importance &lt;- varImp(model_randomForest_1)
 ## most important variable for each class
 sapply(importance,function(x) rownames(importance)[which.max(x)])</code></pre>
 <pre><code>##                   A                   B                   C 
-## &quot;magnet_dumbbell_z&quot;        &quot;num_window&quot;        &quot;num_window&quot; 
+## &quot;magnet_dumbbell_z&quot;         &quot;roll_belt&quot;        &quot;num_window&quot; 
 ##                   D                   E 
 ##         &quot;roll_belt&quot;        &quot;num_window&quot;</code></pre>
 <p>The most important variable in the random forest model for the respective classes (A-E) are:</p>

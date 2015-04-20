@@ -94,13 +94,13 @@ model_randomForest_1 <- randomForest(classe ~ ., data=training_dataset_processed
 ```
 
 # Predictions and Performance Evaluation
-We make predictions on the validation datasets based on the generated models (both LDA and Random Forest).
+We make predictions on the validation datasets based on the generated models (both LDA and Random Forest) in order to assess the out of sample error.
 
 ```{r,warning =FALSE}
 predict_lda <- predict(model_lda_1, testing_dataset_processed)$class
 predict_rf <- predict(model_randomForest_1, testing_dataset_processed)
 
-#70% Accuracy in linear discriminant analysis
+#70.4% Accuracy in linear discriminant analysis
 confusionMatrix(table(predict_lda, testing_dataset_processed$classe))
 OOSError_lda <- sum(predict_lda != testing_dataset_processed$classe) / length(testing_dataset_processed$classe)
 print(OOSError_lda)
@@ -110,7 +110,7 @@ confusionMatrix(table(predict_rf, testing_dataset_processed$classe))
 OOSError_rf <- sum(predict_rf != testing_dataset_processed$classe) / length(testing_dataset_processed$classe)
 print(OOSError_rf)
 ```
-The expected out of Sample Error for the LDA model is 28.6 %. The expected out of Sample Error for the Random Forest Model is 0.2%. We choose the Random Forest Model due to its better out of Sample Performance.
+The expected out of Sample Error for the LDA model is 29.6 %. The expected out of Sample Error for the Random Forest Model is 0.2%. We choose the Random Forest Model due to its better out of Sample Performance.
 
 ```{r,warning =FALSE}
 
