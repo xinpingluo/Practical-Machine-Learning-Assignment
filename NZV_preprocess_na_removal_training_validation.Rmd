@@ -1,0 +1,158 @@
+---
+title: "Practical Machine Learning - Weight lifting classification"
+author: "Xinping Luo"
+date: "Thursday, April 16, 2015"
+output: html_document
+---
+#Intro
+The goal of this project is to predict the manner in which they people did a weight lifting exercise.
+This is defined by the "classe" variable in the training set. This report describes how the model is built and its expected out of sample performance. Finally the prediction model is used to predict 20 different test cases. 
+
+#Load Data
+The data is loaded from https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv (data_raw) and https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv (test_cases_raw) respectively.
+
+```{r,warning =FALSE}
+setwd("C:/Users/DE-77691/Documents/1_Work/Tasks/Coursera/Lec8/Project")
+data_raw <- read.csv("pml-training.csv",sep=",")
+test_cases_raw <- read.csv("pml-testing.csv",sep=",")
+
+set.seed(100)
+library(caret)
+```
+
+#Pre-Process Data
+
+The raw data is split into a training and a validation dataset. We decide to use 25% of data for cross-validation.
+
+```{r,warning =FALSE}
+inTrain = createDataPartition(data_raw$classe, p = 3/4)[[1]]
+training_raw = data_raw[ inTrain,]
+testing_raw = data_raw[-inTrain,]
+
+dim(training_raw) #14718 rows
+dim(testing_raw) #4904 rows
+```
+
+We only make use of certain columns of the data set. Fields with near zero variance are excluded. Moreover all timestamp fields and the initial index field will be excluded. 
+
+```{r,warning =FALSE}
+Variance_analysis <- nearZeroVar(training_raw, saveMetrics = T)
+
+## the variables which are kept after NZV 
+#names(training_raw[,Variance_analysis$nzv==FALSE])
+training_nzv <- training_raw[,Variance_analysis$nzv==FALSE]
+testing_nzv <- testing_raw[,Variance_analysis$nzv==FALSE]
+
+## delete columns with timestamp fields due to formatting problems
+## second row "user_name" is dropped as well
+## index_variable "X" leads to overfitting - thus removed
+a <- setdiff(1:ncol(training_nzv), c(grep('timestamp',names(training_nzv)),2,1)) 
+
+training_dataset_0 <- training_nzv[,a]
+#same transformation for testing dataset
+testing_dataset_0 <- testing_nzv[,a]
+
+sum(is.na(training_dataset_0))
+sum(is.na(testing_dataset_0))
+```
+
+The dataset contains a high number of NAs. The descriptive analysis yields that certain columns contain high numbers of missing data. Thus we remove all those columns with more than 90% of NAs
+
+```{r,warning =FALSE}
+training_dataset <- training_dataset_0[, colSums(is.na(training_dataset_0)) < nrow(training_dataset_0) * 0.9]
+# same transformation for testing dataset
+testing_dataset <- testing_dataset_0[, colSums(is.na(training_dataset_0)) < nrow(training_dataset_0) * 0.9]
+```
+The remaining column names that are included for model training are as follows:
+```{r,warning =FALSE}
+names(training_dataset)
+
+#count NAs
+sum(is.na(training_dataset))
+sum(is.na(testing_dataset))
+```
+After removal of those columns there are no NAs in the remaining training dataset.
+Furthermore all numeric fields will be centered and scaled. The transformation is performed on the training dataset. The same set of transformations (based on the training data set) is performed on the validation dataset.
+
+````{r,warning =FALSE}
+# center and scale all variables except for the predicted variable (last column of the data frame - "classe")
+preProc_dataset <- preProcess(training_dataset[,1:(ncol(training_dataset)-1)], method =c("center","scale"))
+
+# apply transformation operation on training and test dataset
+training_dataset_processed <- cbind(predict(preProc_dataset, training_dataset[,1:(ncol(training_dataset)-1)]), classe = training_dataset$classe)
+  testing_dataset_processed <- cbind(predict(preProc_dataset, testing_dataset[,1:(ncol(testing_dataset)-1)]), classe = testing_dataset$classe)
+```
+
+#Modeling
+We make use of linear discriminant analysis and random forest models.
+```{r,warning =FALSE,}
+
+library(MASS)
+model_lda_1 <- lda(classe ~ ., data=training_dataset_processed)
+library(randomForest)
+model_randomForest_1 <- randomForest(classe ~ ., data=training_dataset_processed,importance =T ,method="class")
+```
+
+# Predictions and Performance Evaluation
+We make predictions on the validation datasets based on the generated models (both LDA and Random Forest).
+
+```{r,warning =FALSE}
+predict_lda <- predict(model_lda_1, testing_dataset_processed)$class
+predict_rf <- predict(model_randomForest_1, testing_dataset_processed)
+
+#70% Accuracy in linear discriminant analysis
+confusionMatrix(table(predict_lda, testing_dataset_processed$classe))
+OOSError_lda <- sum(predict_lda != testing_dataset_processed$classe) / length(testing_dataset_processed$classe)
+print(OOSError_lda)
+
+#99,8% Accuracy in random forest model
+confusionMatrix(table(predict_rf, testing_dataset_processed$classe))
+OOSError_rf <- sum(predict_rf != testing_dataset_processed$classe) / length(testing_dataset_processed$classe)
+print(OOSError_rf)
+```
+The expected out of Sample Error for the LDA model is 28.6 %. The expected out of Sample Error for the Random Forest Model is 0.2%. We choose the Random Forest Model due to its better out of Sample Performance.
+
+```{r,warning =FALSE}
+
+##Importance of variables in the model
+importance <- varImp(model_randomForest_1)
+## most important variable for each class
+sapply(importance,function(x) rownames(importance)[which.max(x)])
+```
+The most important variable in the random forest model for the respective classes (A-E) are:
+
+* For class A: "magnet_dumbbell_z"
+* For class B: "roll_belt"
+* For class C: "num_window"
+* For class D: "roll_belt"
+* For class E: "num_window"
+
+# Test Cases
+
+We make use of our random Forest model and make a prediction for the 20 test cases provided.
+```{r}
+## exclude the columns that are not needed
+  test_cases_cols <- test_cases_raw[,names(training_dataset_processed[,1:(ncol(testing_dataset_processed)-1)])]
+#conduct preprocessing step as done on the training dataset
+  test_cases_processed <- predict(preProc_dataset,test_cases_cols)
+  predict_2 <- predict(model_randomForest_1,test_cases_processed)
+```
+The predictions of the 20 cases are in order:
+```{r}
+predict_2
+```
+After submitting the predictions we see that all predictions were correct.
+We made use of the following procedure to export the 20 prediction cases:
+```{r eval=FALSE}
+
+#submission routine
+pml_write_files = function(x){
+ n = length(x)
+ for(i in 1:n){
+   filename = paste0("problem_id_",i,".txt")
+   write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+ }
+}
+ 
+pml_write_files(predict_2)
+```
